@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:calculatorvtwo_app/AboutView.dart';
 import 'package:calculatorvtwo_app/CalculatorView.dart';
+import 'package:internet_connection_checker/internet_connection_checker.dart';
+import 'package:provider/provider.dart';
+import 'package:calculatorvtwo_app/login.dart';
 
 void main() {
   runApp(const MyApp());
@@ -13,19 +16,71 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Navigator',
-      theme: theme,
-      home: const HomeScreen(),
+    return ChangeNotifierProvider(
+      create: (_) => DarkThemeProvider(),
+      child: Consumer<DarkThemeProvider>(
+        builder: (context, themeProvider, _) {
+          return MaterialApp(
+            debugShowCheckedModeBanner: false,
+            theme:
+                themeProvider.darkTheme ? ThemeData.dark() : ThemeData.light(),
+            home: const HomeScreen(),
+          );
+        },
+      ),
     );
   }
 }
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
 
   @override
+  _HomeScreenState createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  int _selectedIndex = 0;
+  String _connectionStatus = 'Unknown';
+  int _currentIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _initConnectivity();
+    _listenForConnectivityChanges();
+  }
+
+  Future<void> _initConnectivity() async {
+    bool isConnected = await InternetConnectionChecker().hasConnection;
+    setState(() {
+      _connectionStatus = isConnected ? 'Connected' : 'Disconnected';
+    });
+  }
+
+  void _listenForConnectivityChanges() {
+    InternetConnectionChecker().onStatusChange.listen((status) {
+      setState(() {
+        _connectionStatus = status == InternetConnectionStatus.connected
+            ? 'Connected'
+            : 'Disconnected';
+      });
+      _showConnectivitySnackbar();
+    });
+  }
+
+  void _showConnectivitySnackbar() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(_connectionStatus),
+        duration: Duration(seconds: 15),
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final themeChange = Provider.of<DarkThemeProvider>(context);
     return Scaffold(
       appBar: AppBar(
         title: const Text('NavCalcApp'),
@@ -38,74 +93,81 @@ class HomeScreen extends StatelessWidget {
           ),
         ),
       ),
-      drawer: Container(
-        decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.5),
-              spreadRadius: 5,
-              blurRadius: 7,
-              offset: Offset(0, 3), // changes the shadow direction
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            DrawerHeader(
+              decoration: BoxDecoration(
+                color: Colors.grey,
+              ),
+              child: Text(
+                'Calculate',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                ),
+              ),
             ),
+            ListTile(
+              leading: Icon(Icons.home),
+              title: Text('Home'),
+              onTap: () {
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.calculate),
+              title: Text('Calculator'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => Calculator(),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.info),
+              title: Text('About'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AboutScreen(),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.logout),
+              title: Text('Logout'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => LoginScreen(),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.dark_mode),
+              title: Text('Gikondo Mode'),
+              trailing: Checkbox(
+                value: themeChange.darkTheme,
+                onChanged: (bool? value) {
+                  if (value != null) {
+                    themeChange.darkTheme = value;
+                  }
+                },
+              ),
+            )
           ],
-        ),
-        child: Drawer(
-          child: ListView(
-            padding: EdgeInsets.zero,
-            children: [
-              Container(
-                constraints: BoxConstraints(
-                  maxWidth: 100,
-                ),
-                child: DrawerHeader(
-                  decoration: BoxDecoration(
-                    color: Colors.grey,
-                  ),
-                  child: Text(
-                    'Calculate',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                    ),
-                  ),
-                ),
-              ),
-              ListTile(
-                leading: Icon(Icons.home),
-                title: Text('Home'),
-                onTap: () {
-                  Navigator.pop(context);
-                  // Navigate to the home screen or any other screen as needed
-                },
-              ),
-              ListTile(
-                leading: Icon(Icons.calculate),
-                title: Text('Calculator'),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => Calculator(),
-                    ),
-                  );
-                },
-              ),
-              ListTile(
-                leading: Icon(Icons.info),
-                title: Text('About'),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => AboutScreen(),
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
         ),
       ),
       body: Stack(
@@ -213,5 +275,16 @@ class HomeScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+class DarkThemeProvider with ChangeNotifier {
+  bool _darkTheme = false;
+
+  bool get darkTheme => _darkTheme;
+
+  set darkTheme(bool value) {
+    _darkTheme = value;
+    notifyListeners();
   }
 }
