@@ -3,7 +3,8 @@ import 'package:calculatorvtwo_app/AboutView.dart';
 import 'package:calculatorvtwo_app/CalculatorView.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:provider/provider.dart';
-import 'package:calculatorvtwo_app/login.dart';
+import 'package:calculatorvtwo_app/SignUpView.dart';
+import 'package:calculatorvtwo_app/api/google_signin_api.dart';
 
 void main() {
   runApp(const MyApp());
@@ -24,7 +25,7 @@ class MyApp extends StatelessWidget {
             debugShowCheckedModeBanner: false,
             theme:
                 themeProvider.darkTheme ? ThemeData.dark() : ThemeData.light(),
-            home: const HomeScreen(),
+            home: SignUpScreen(),
           );
         },
       ),
@@ -101,12 +102,23 @@ class _HomeScreenState extends State<HomeScreen> {
               decoration: BoxDecoration(
                 color: Colors.grey,
               ),
-              child: Text(
-                'Calculate',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Calculate',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                  CircleAvatar(
+                    radius: 30, // Adjust the radius as needed
+                    backgroundImage: AssetImage(
+                        'assets/default_avatar.jpg'), // Provide a default avatar image
+                  ),
+                ],
               ),
             ),
             ListTile(
@@ -143,14 +155,22 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
             ListTile(
+              leading: Icon(Icons.contacts),
+              title: Text('Contacts'),
+              onTap: () {
+                // Navigate to a screen or perform an action to access device contacts here
+                // You can implement this based on your application's requirements
+                // Example: Navigator.push(context, MaterialPageRoute(builder: (context) => ContactsScreen()));
+              },
+            ),
+            ListTile(
               leading: Icon(Icons.logout),
               title: Text('Logout'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
+              onTap: () async {
+                await GoogleSignInApi.logout();
+                Navigator.of(context).pushReplacement(
                   MaterialPageRoute(
-                    builder: (context) => LoginScreen(),
+                    builder: (context) => SignUpScreen(),
                   ),
                 );
               },
