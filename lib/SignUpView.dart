@@ -1,7 +1,21 @@
+import 'package:calculatorvtwo_app/logged_in_page.dart';
 import 'package:flutter/material.dart';
-import 'package:calculatorvtwo_app/login.dart';
+import 'package:calculatorvtwo_app/api/google_signin_api.dart';
+import 'package:calculatorvtwo_app/main.dart';
 
 class SignUpScreen extends StatelessWidget {
+  Future signIn(BuildContext context) async {
+    final user = await GoogleSignInApi.login();
+    if (user == null) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Sign in Failed')));
+    } else {
+      Navigator.of(context).pushReplacement(MaterialPageRoute(
+        builder: (context) => LoggedInPage(user: user),
+      ));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -14,36 +28,9 @@ class SignUpScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            TextFormField(
-              decoration: InputDecoration(
-                labelText: 'Username',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            SizedBox(height: 20),
-            TextFormField(
-              obscureText: true,
-              decoration: InputDecoration(
-                labelText: 'Password',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                // Implement sign up functionality
-                Navigator.pop(context); // Remove SignUpScreen from stack
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => LoginScreen()),
-                );
-              },
-              child: Text('Sign up'),
-            ),
-            SizedBox(height: 10),
             TextButton(
               onPressed: () {
-                // Implement Google Sign-up functionality
+                signIn(context);
               },
               child: Text(
                 'Sign up with Google',
